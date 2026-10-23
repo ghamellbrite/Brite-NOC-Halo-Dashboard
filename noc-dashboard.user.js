@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Brite NOC Dashboard (Hali)
 // @namespace    brite-noc
-// @version      2.0.0
+// @version      2.1.0
 // @description  Full-screen NOC wallboard overlay for HaloPSA dashboard 1013, styled with the Hali design language.
 // @match        https://brite.halopsa.com/dashboard*
 // @run-at       document-start
@@ -22,6 +22,9 @@
    * ==================================================================== */
   const CONFIG = {
     dashboardId: '1013',
+
+    // Service accounts hidden from the agent lists (case-insensitive substring match)
+    hideAgents: ['moovila api agent', 'moovilla api agent'],
 
     // Tickets closed at or above this gets the crown
     crownAt: 12,
@@ -52,6 +55,7 @@
    * Helpers
    * ==================================================================== */
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]));
+  const shouldHideAgent = n => { n = String(n || '').toLowerCase(); return CONFIG.hideAgents.some(h => n.includes(h)); };
   const asNum = x => { if (x === '' || x == null) return null; const n = Number(x); return Number.isFinite(n) ? n : null; };
   const key = s => String(s ?? '').trim().toLowerCase();
   const initials = n => String(n).split(/\s+/).map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
@@ -77,6 +81,7 @@
     if (k.includes('sev 1') || k.includes('critical') || k.includes('high')) return C.danger;
     if (k.includes('sev 2') || k.includes('med')) return C.orange;
     if (k.includes('sev 3') || k.includes('low')) return C.success;
+    if (k === 'other') return C.strong;
     return priorityPalette[i % priorityPalette.length];
   };
 
@@ -102,7 +107,7 @@
     if (!rows) return null;
     const out = rows.map(r => {
       const name = r?.Agent, n = asNum(r?.[valueKey]);
-      return (!name || n == null) ? null : [String(name), n];
+      return (!name || n == null || shouldHideAgent(name)) ? null : [String(name), n];
     }).filter(Boolean);
     return out.sort((a, b) => b[1] - a[1]);
   }
@@ -203,8 +208,16 @@
     return `<div class="legend">${entries.map(([k, v], i) =>
       `<div class="lg"><span><i style="background:${colorFn(k, i)}"></i><em>${esc(k)}</em></span><b>${v}</b></div>`).join('')}</div>`;
   }
-  const pieCard = (title, obj, colorFn, label, size, emptyText) =>
-    `<div class="eyebrow">${esc(title)}</div><div class="flex">${donut(obj, colorFn, label, size)}${legend(obj, colorFn, emptyText)}</div>`;
+  // Largest N slices by count, everything else rolled into "Other"
+  function topN(obj, n) {
+    const e = Object.entries(obj).sort((a, b) => b[1] - a[1]);
+    if (e.length <= n + 1) return Object.fromEntries(e);
+    const out = Object.fromEntries(e.slice(0, n));
+    out.Other = e.slice(n).reduce((a, [, v]) => a + v, 0);
+    return out;
+  }
+  const pieCard = (title, obj, colorFn, label, size, emptyText, mod = '') =>
+    `<div class="eyebrow">${esc(title)}</div><div class="flex ${mod}">${donut(obj, colorFn, label, size)}${legend(obj, colorFn, emptyText)}</div>`;
 
   const fmt = v => v == null ? '—' : String(Math.round(v * 100) / 100);
 
@@ -232,57 +245,61 @@
       --text:#F1F5FB;--subtle:#A2AABA;--subtlest:#8693A9;--brand:#6CD4F0;--brand-c:#233E4F;--on-brand:#111827;
       --success:#7EE2B8;--warning:#F5C96B;--danger:#F58A80;
       --shadow:0 1px 2px rgba(0,0,0,.28),0 8px 24px -10px rgba(0,0,0,.5);
-      font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--text)}
+      --f:"Poppins",system-ui,"Segoe UI",Arial,sans-serif;
+      font-family:var(--f);font-variant-numeric:tabular-nums;color:var(--text)}
     .stage{width:1920px;height:1080px;transform-origin:top left;position:absolute;left:0;top:0;
       background:radial-gradient(1200px 500px at 50% -10%,rgba(108,212,240,.14),transparent 70%),var(--default);
       padding:32px 40px;display:grid;grid-template-rows:auto 1fr;gap:24px}
     .hdr{display:flex;align-items:center;justify-content:space-between}
     .brand{display:flex;align-items:center;gap:20px}
     .brand img{height:72px}
-    h1{font:700 34px/40px "Bricolage Grotesque","IBM Plex Sans",sans-serif;letter-spacing:-.02em}
-    .sub{font:500 13px "IBM Plex Sans";color:var(--subtle);letter-spacing:.02em}
-    .pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:9999px;background:var(--raised);font:500 14px "IBM Plex Sans";color:var(--subtle)}
+    h1{font:700 34px/40px var(--f);letter-spacing:-.02em}
+    .sub{font:500 13px var(--f);color:var(--subtle);letter-spacing:.02em}
+    .pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:9999px;background:var(--raised);font:500 14px var(--f);color:var(--subtle)}
     .pill i{width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 10px var(--success)}
     .pill.stale i{background:var(--warning);box-shadow:0 0 10px var(--warning)}
     .grid{display:grid;gap:24px;min-height:0}
     .card{background:var(--raised);border-radius:28px;padding:24px;box-shadow:var(--shadow);min-height:0;display:flex;flex-direction:column;overflow:hidden}
     .card.hero{border-radius:32px;background:linear-gradient(160deg,var(--overlay),var(--raised))}
-    .eyebrow{font:600 13px "IBM Plex Sans";letter-spacing:.12em;text-transform:uppercase;color:var(--subtle);margin-bottom:14px}
+    .eyebrow{font:600 13px var(--f);letter-spacing:.12em;text-transform:uppercase;color:var(--subtle);margin-bottom:14px}
     .kpi{justify-content:center;gap:8px}
     .kpi .eyebrow{margin:0}
-    .big{font:600 60px/1 "IBM Plex Mono",monospace;letter-spacing:-.02em}
-    .delta{font:500 14px "IBM Plex Sans";color:var(--subtlest);min-height:18px}
+    .big{font:600 60px/1 var(--f);letter-spacing:-.02em}
+    .delta{font:500 14px var(--f);color:var(--subtlest);min-height:18px}
     .rows{display:grid;gap:8px;align-content:start;overflow:hidden;flex:1;min-height:0;scrollbar-width:none}
     .row{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:14px;height:64px;padding:0 18px 0 12px;border-radius:8px;background:var(--overlay);position:relative;overflow:hidden}
     .row>.bar{position:absolute;left:0;top:0;bottom:0;background:var(--brand-c);z-index:0}
     .row>:not(.bar){position:relative;z-index:1}
-    .av{width:36px;height:36px;border-radius:50%;background:var(--strong);display:grid;place-items:center;font:600 13px "IBM Plex Sans"}
-    .nm{font:600 20px "IBM Plex Sans";display:flex;align-items:center;gap:10px;min-width:0}
+    .av{width:36px;height:36px;border-radius:50%;background:var(--strong);display:grid;place-items:center;font:600 13px var(--f)}
+    .nm{font:600 20px var(--f);display:flex;align-items:center;gap:10px;min-width:0}
     .nm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .n{font:600 28px "IBM Plex Mono",monospace}
+    .n{font:600 28px var(--f)}
     .row.lead .av{background:var(--warning);color:var(--on-brand)}
     .crown{width:24px;height:24px;flex:none;fill:var(--warning);filter:drop-shadow(0 0 6px rgba(245,201,107,.6))}
-    .empty{color:var(--subtlest);font:500 16px "IBM Plex Sans";padding:12px}
+    .empty{color:var(--subtlest);font:500 16px var(--f);padding:12px}
     .flex{display:flex;align-items:center;gap:24px;flex:1;min-height:0}
     .donut{width:var(--s);height:var(--s);border-radius:50%;display:grid;place-items:center;flex:none;position:relative}
     .donut::after{content:"";position:absolute;inset:22px;border-radius:50%;background:var(--raised)}
     .hero .donut::after{background:var(--overlay)}
     .c{position:relative;z-index:1;text-align:center}
-    .c b{display:block;font:600 40px/1 "IBM Plex Mono",monospace}
-    .c span{font:500 12px "IBM Plex Sans";color:var(--subtle);letter-spacing:.08em;text-transform:uppercase}
+    .c b{display:block;font:600 40px/1 var(--f)}
+    .c span{font:500 12px var(--f);color:var(--subtle);letter-spacing:.08em;text-transform:uppercase}
     .legend{display:grid;gap:8px;flex:1;min-width:0}
-    .lg{display:flex;align-items:center;justify-content:space-between;gap:12px;height:48px;padding:0 16px;border-radius:8px;background:var(--overlay);font:600 18px "IBM Plex Sans"}
+    .lg{display:flex;align-items:center;justify-content:space-between;gap:12px;height:48px;padding:0 16px;border-radius:8px;background:var(--overlay);font:600 18px var(--f)}
     .lg span{display:flex;align-items:center;gap:12px;min-width:0}
     .lg em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .lg i{width:12px;height:12px;border-radius:4px;flex:none}
-    .lg b{font:600 22px "IBM Plex Mono",monospace}
+    .lg b{font:600 22px var(--f)}
+    .flex.tight .legend{gap:6px}
+    .flex.tight .lg{height:40px;font-size:16px}
+    .flex.tight .lg b{font-size:19px}
     .slaItem{display:grid;justify-items:center;gap:10px}
-    .slaLabel{font:600 14px "IBM Plex Sans";letter-spacing:.12em;text-transform:uppercase;color:var(--subtle)}
+    .slaLabel{font:600 14px var(--f);letter-spacing:.12em;text-transform:uppercase;color:var(--subtle)}
     .c small{font-size:16px;color:var(--subtle)}
-    kbd,code{font:500 14px "IBM Plex Mono",monospace;background:var(--raised);padding:1px 6px;border-radius:4px;color:var(--text)}
-    .debug{position:absolute;inset:40px;z-index:10;background:rgba(15,21,34,.97);border-radius:28px;padding:28px;overflow:auto;box-shadow:0 16px 40px rgba(0,0,0,.6);font:500 14px "IBM Plex Mono",monospace;display:none}
+    kbd,code{font:500 14px var(--f);background:var(--raised);padding:1px 6px;border-radius:4px;color:var(--text)}
+    .debug{position:absolute;inset:40px;z-index:10;background:rgba(15,21,34,.97);border-radius:28px;padding:28px;overflow:auto;box-shadow:0 16px 40px rgba(0,0,0,.6);font:500 14px var(--f);display:none}
     .debug.on{display:block}
-    .debug h2{font:700 22px "Bricolage Grotesque",sans-serif;margin-bottom:12px}
+    .debug h2{font:700 22px var(--f);margin-bottom:12px}
     .debug table{border-collapse:collapse;width:100%}
     .debug td,.debug th{text-align:left;padding:6px 10px;border-bottom:1px solid #2B3961;vertical-align:top}
     .debug th{color:var(--subtle)}
@@ -298,10 +315,14 @@
     document.documentElement.style.overflow = 'hidden';
 
     const root = host.attachShadow({ mode: 'open' });
-    const font = document.createElement('link');
-    font.rel = 'stylesheet';
-    font.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap';
-    root.appendChild(font);
+    // Fonts must be requested from the document: @font-face inside a shadow root is ignored
+    if (!document.getElementById('noc-poppins')) {
+      const font = document.createElement('link');
+      font.id = 'noc-poppins';
+      font.rel = 'stylesheet';
+      font.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap';
+      document.head.appendChild(font);
+    }
     const style = document.createElement('style');
     style.textContent = CSS;
     root.appendChild(style);
@@ -326,7 +347,7 @@
           <div class="grid" style="grid-template-columns:1.1fr 1.1fr .9fr">
             <div class="card"><div class="eyebrow">Tickets closed · by agent</div><div class="rows" id="closed"></div></div>
             <div class="card"><div class="eyebrow">Actionable · by agent</div><div class="rows" id="actionable"></div></div>
-            <div class="grid" style="grid-template-rows:1fr 1fr">
+            <div class="grid" style="grid-template-rows:auto 1fr">
               <div class="card" id="feedback"></div>
               <div class="card" id="priority"></div>
             </div>
@@ -379,8 +400,8 @@
 
     setHTML(ui.listClosed, rowsHTML(state.closed, { crownAt: CONFIG.crownAt }));
     setHTML(ui.listAction, rowsHTML(state.actionable));
-    setHTML(ui.priority, pieCard('Tickets by priority', state.priority, priorityColor, 'open', 150, 'No tickets'));
-    setHTML(ui.feedback, pieCard('Customer feedback', state.feedback, feedbackColor, 'surveys', 170, 'No feedback'));
+    setHTML(ui.priority, pieCard('Tickets by priority', topN(state.priority, 5), priorityColor, 'open', 150, 'No tickets', 'tight'));
+    setHTML(ui.feedback, pieCard('Customer feedback', state.feedback, feedbackColor, 'surveys', 150, 'No feedback'));
 
     if (state.syncedAt) {
       ui.sync.querySelector('span').textContent = `Synced ${state.syncedAt.toLocaleTimeString()}`;
