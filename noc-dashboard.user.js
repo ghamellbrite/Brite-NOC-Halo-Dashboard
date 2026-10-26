@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Brite NOC Dashboard (Hali)
 // @namespace    brite-noc
-// @version      2.2.0
+// @version      2.2.1
 // @description  Full-screen NOC wallboard overlay for HaloPSA dashboard 1013, styled with the Hali design language.
 // @match        https://brite.halopsa.com/dashboard*
 // @run-at       document-start
@@ -267,15 +267,15 @@
     .big{font:600 96px/1 var(--f);letter-spacing:-.03em}
     .delta{font:500 22px var(--f);color:var(--subtlest);min-height:28px}
     .rows{display:grid;gap:8px;align-content:start;overflow:hidden;flex:1;min-height:0;scrollbar-width:none}
-    .row{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:14px;height:64px;padding:0 18px 0 12px;border-radius:8px;background:var(--overlay);position:relative;overflow:hidden}
+    .row{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:16px;height:80px;padding:0 22px 0 14px;border-radius:8px;background:var(--overlay);position:relative;overflow:hidden}
     .row>.bar{position:absolute;left:0;top:0;bottom:0;background:var(--brand-c);z-index:0}
     .row>:not(.bar){position:relative;z-index:1}
-    .av{width:36px;height:36px;border-radius:50%;background:var(--strong);display:grid;place-items:center;font:600 13px var(--f)}
-    .nm{font:600 20px var(--f);display:flex;align-items:center;gap:10px;min-width:0}
+    .av{width:48px;height:48px;border-radius:50%;background:var(--strong);display:grid;place-items:center;font:600 17px var(--f)}
+    .nm{font:600 30px var(--f);display:flex;align-items:center;gap:12px;min-width:0}
     .nm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .n{font:600 28px var(--f)}
+    .n{font:600 40px var(--f)}
     .row.lead .av{background:var(--warning);color:var(--on-brand)}
-    .crown{width:24px;height:24px;flex:none;fill:var(--warning);filter:drop-shadow(0 0 6px rgba(245,201,107,.6))}
+    .crown{width:32px;height:32px;flex:none;fill:var(--warning);filter:drop-shadow(0 0 6px rgba(245,201,107,.6))}
     .empty{color:var(--subtlest);font:500 16px var(--f);padding:12px}
     .flex{display:flex;align-items:center;gap:24px;flex:1;min-height:0}
     .donut{width:var(--s);height:var(--s);border-radius:50%;display:grid;place-items:center;flex:none;position:relative}
