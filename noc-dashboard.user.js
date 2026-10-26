@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Brite NOC Dashboard (Hali)
 // @namespace    brite-noc
-// @version      2.1.3
+// @version      2.2.0
 // @description  Full-screen NOC wallboard overlay for HaloPSA dashboard 1013, styled with the Hali design language.
 // @match        https://brite.halopsa.com/dashboard*
 // @run-at       document-start
@@ -262,10 +262,10 @@
     .card{background:var(--raised);border-radius:28px;padding:24px;box-shadow:var(--shadow);min-height:0;display:flex;flex-direction:column;overflow:hidden}
     .card.hero{border-radius:32px;background:linear-gradient(160deg,var(--overlay),var(--raised))}
     .eyebrow{font:600 20px var(--f);letter-spacing:.06em;text-transform:uppercase;color:var(--subtle);margin-bottom:16px}
-    .kpi{justify-content:center;gap:8px}
+    .kpi{justify-content:center;gap:12px}
     .kpi .eyebrow{margin:0}
-    .big{font:600 60px/1 var(--f);letter-spacing:-.02em}
-    .delta{font:500 14px var(--f);color:var(--subtlest);min-height:18px}
+    .big{font:600 96px/1 var(--f);letter-spacing:-.03em}
+    .delta{font:500 22px var(--f);color:var(--subtlest);min-height:28px}
     .rows{display:grid;gap:8px;align-content:start;overflow:hidden;flex:1;min-height:0;scrollbar-width:none}
     .row{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:14px;height:64px;padding:0 18px 0 12px;border-radius:8px;background:var(--overlay);position:relative;overflow:hidden}
     .row>.bar{position:absolute;left:0;top:0;bottom:0;background:var(--brand-c);z-index:0}
@@ -282,17 +282,18 @@
     .donut::after{content:"";position:absolute;inset:22px;border-radius:50%;background:var(--raised)}
     .hero .donut::after{background:var(--overlay)}
     .c{position:relative;z-index:1;text-align:center}
-    .c b{display:block;font:600 40px/1 var(--f)}
-    .c span{font:500 12px var(--f);color:var(--subtle);letter-spacing:.08em;text-transform:uppercase}
-    .legend{display:grid;gap:8px;flex:1;min-width:0}
-    .lg{display:flex;align-items:center;justify-content:space-between;gap:12px;height:48px;padding:0 16px;border-radius:8px;background:var(--overlay);font:600 18px var(--f)}
+    .c b{display:block;font:600 52px/1 var(--f)}
+    .c span{font:500 15px var(--f);color:var(--subtle);letter-spacing:.08em;text-transform:uppercase}
+    .legend{display:grid;gap:8px;flex:1;min-width:0;align-self:stretch;max-height:100%;align-content:center;grid-auto-rows:minmax(0,64px)}
+    .flex>.donut{height:100%;width:auto;aspect-ratio:1;max-height:100%}
+    .lg{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 20px;border-radius:8px;background:var(--overlay);font:600 24px var(--f)}
     .lg span{display:flex;align-items:center;gap:12px;min-width:0}
     .lg em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .lg i{width:12px;height:12px;border-radius:4px;flex:none}
-    .lg b{font:600 22px var(--f)}
+    .lg b{font:600 30px var(--f)}
     .flex.tight .legend{gap:6px}
-    .flex.tight .lg{height:40px;font-size:16px}
-    .flex.tight .lg b{font-size:19px}
+    .flex.tight .lg{font-size:20px}
+    .flex.tight .lg b{font-size:24px}
     .slaItem{display:grid;justify-items:center;gap:10px}
     .slaLabel{font:600 18px var(--f);letter-spacing:.08em;text-transform:uppercase;color:var(--subtle)}
     .c small{font-size:16px;color:var(--subtle)}
@@ -344,10 +345,10 @@
             <div class="card kpi"><div class="eyebrow">Open tickets</div><div class="big" id="k-open">—</div><div class="delta"></div></div>
             <div class="card kpi"><div class="eyebrow">Actionable</div><div class="big" id="k-action">—</div><div class="delta" id="d-action"></div></div>
           </div>
-          <div class="grid" style="grid-template-columns:1.1fr 1.1fr .9fr">
+          <div class="grid" style="grid-template-columns:1fr 1fr 1.15fr">
             <div class="card"><div class="eyebrow">Tickets closed · by agent</div><div class="rows" id="closed"></div></div>
             <div class="card"><div class="eyebrow">Actionable · by agent</div><div class="rows" id="actionable"></div></div>
-            <div class="grid" style="grid-template-rows:auto 1fr">
+            <div class="grid" style="grid-template-rows:minmax(0,1fr) minmax(0,1.3fr)">
               <div class="card" id="feedback"></div>
               <div class="card" id="priority"></div>
             </div>
