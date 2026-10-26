@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Brite NOC Dashboard (Hali)
 // @namespace    brite-noc
-// @version      2.1.1
+// @version      2.1.2
 // @description  Full-screen NOC wallboard overlay for HaloPSA dashboard 1013, styled with the Hali design language.
 // @match        https://brite.halopsa.com/dashboard*
 // @run-at       document-start
@@ -230,7 +230,7 @@
       <div class="c"><b style="font-size:30px;color:${col}">${pct.toFixed(1)}<small>%</small></b></div></div><span class="slaLabel">${label}</span></div>`;
   }
   function slaHTML() {
-    return `<div class="eyebrow">Reactive ticket SLA · target ${CONFIG.slaGreenAt}%</div>
+    return `<div class="eyebrow">Reactive SLA · ${CONFIG.slaGreenAt}% target</div>
       <div class="flex" style="justify-content:space-around">${slaRing('Response', state.sla.response)}${slaRing('Fix', state.sla.fix)}</div>`;
   }
 
@@ -261,7 +261,7 @@
     .grid{display:grid;gap:24px;min-height:0}
     .card{background:var(--raised);border-radius:28px;padding:24px;box-shadow:var(--shadow);min-height:0;display:flex;flex-direction:column;overflow:hidden}
     .card.hero{border-radius:32px;background:linear-gradient(160deg,var(--overlay),var(--raised))}
-    .eyebrow{font:600 13px var(--f);letter-spacing:.12em;text-transform:uppercase;color:var(--subtle);margin-bottom:14px}
+    .eyebrow{font:600 20px var(--f);letter-spacing:.06em;text-transform:uppercase;color:var(--subtle);margin-bottom:16px}
     .kpi{justify-content:center;gap:8px}
     .kpi .eyebrow{margin:0}
     .big{font:600 60px/1 var(--f);letter-spacing:-.02em}
@@ -294,7 +294,7 @@
     .flex.tight .lg{height:40px;font-size:16px}
     .flex.tight .lg b{font-size:19px}
     .slaItem{display:grid;justify-items:center;gap:10px}
-    .slaLabel{font:600 14px var(--f);letter-spacing:.12em;text-transform:uppercase;color:var(--subtle)}
+    .slaLabel{font:600 18px var(--f);letter-spacing:.08em;text-transform:uppercase;color:var(--subtle)}
     .c small{font-size:16px;color:var(--subtle)}
     kbd,code{font:500 14px var(--f);background:var(--raised);padding:1px 6px;border-radius:4px;color:var(--text)}
     .debug{position:absolute;inset:40px;z-index:10;background:rgba(15,21,34,.97);border-radius:28px;padding:28px;overflow:auto;box-shadow:0 16px 40px rgba(0,0,0,.6);font:500 14px var(--f);display:none}
