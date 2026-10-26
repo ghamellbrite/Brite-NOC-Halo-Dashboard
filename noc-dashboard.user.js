@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Brite NOC Dashboard (Hali)
 // @namespace    brite-noc
-// @version      2.1.2
+// @version      2.1.3
 // @description  Full-screen NOC wallboard overlay for HaloPSA dashboard 1013, styled with the Hali design language.
 // @match        https://brite.halopsa.com/dashboard*
 // @run-at       document-start
@@ -68,11 +68,11 @@
   };
   const feedbackColor = l => {
     const k = key(l);
-    if (k.includes('very bad') || k.includes('verybad')) return C.danger;
-    if (k === 'bad') return C.orange;
-    if (k.includes('awesome')) return C.success;
-    if (k.includes('good')) return C.brand;
-    if (k === 'ok' || k.includes('okay') || k.includes('neutral')) return C.warning;
+    if (k.includes('very bad') || k.includes('verybad')) return '#B3261E'; // dark red
+    if (k === 'bad') return '#E5484D';                                    // red
+    if (k.includes('awesome')) return '#1E8E4E';                          // dark green
+    if (k.includes('good')) return '#7EE2B8';                             // light green
+    if (k === 'ok' || k.includes('okay') || k.includes('neutral')) return C.warning; // yellow
     if (k.includes('no feedback')) return C.strong;
     return C.info;
   };
