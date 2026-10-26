@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Brite NOC Dashboard (Hali)
 // @namespace    brite-noc
-// @version      2.2.1
+// @version      2.3.0
 // @description  Full-screen NOC wallboard overlay for HaloPSA dashboard 1013, styled with the Hali design language.
 // @match        https://brite.halopsa.com/dashboard*
 // @run-at       document-start
@@ -26,8 +26,12 @@
     // Service accounts hidden from the agent lists (case-insensitive substring match)
     hideAgents: ['moovila api agent', 'moovilla api agent'],
 
-    // Tickets closed at or above this gets the crown
-    crownAt: 12,
+    // Tickets-closed badges, checked from the top. First tier whose `min` is met wins.
+    badges: [
+      { min: 21, icon: 'flame' },
+      { min: 16, icon: 'crown' },
+      { min: 12, icon: 'star' },
+    ],
 
     // Halo report id -> what it feeds
     reports: {
@@ -174,17 +178,23 @@
   /* ======================================================================
    * Rendering helpers
    * ==================================================================== */
-  const crown = `<svg class="crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16 3 6l5 4 4-6 4 6 5-4-2 10H5zm0 2h14v2H5z"/></svg>`;
+  const ICONS = {
+    star: `<svg class="badge star" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>`,
+    crown: `<svg class="badge crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16 3 6l5 4 4-6 4 6 5-4-2 10H5zm0 2h14v2H5z"/></svg>`,
+    flame: `<svg class="badge flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.48 12.35c-1.57-4.08-7.16-4.3-5.81-10.23.1-.44-.37-.78-.75-.55C9.29 3.71 6.68 8 8.87 13.62c.18.46-.36.89-.75.59-1.81-1.37-2-3.34-1.84-4.75.06-.52-.62-.77-.91-.34C4.69 10.16 4 11.84 4 14.37c.38 5.6 5.11 7.32 6.81 7.54 2.43.31 5.06-.14 6.95-1.87 2.08-1.93 2.84-5.01 1.72-7.69z"/></svg>`,
+  };
+  const badgeFor = n => CONFIG.badges.find(b => n >= b.min)?.icon || null;
 
-  function rowsHTML(list, { crownAt = null } = {}) {
+  function rowsHTML(list, { badges = false } = {}) {
     if (!list.length) return `<div class="empty">Waiting for data…</div>`;
     const max = Math.max(1, ...list.map(x => x[1]));
     return list.map(([name, n]) => {
-      const lead = crownAt != null && n >= crownAt;
+      const icon = badges ? badgeFor(n) : null;
+      const lead = !!icon;
       return `<div class="row${lead ? ' lead' : ''}">
         <div class="bar" style="width:${(n / max * 100).toFixed(1)}%"></div>
         <div class="av">${esc(initials(name))}</div>
-        <div class="nm"><span>${esc(name)}</span>${lead ? crown : ''}</div>
+        <div class="nm"><span>${esc(name)}</span>${icon ? ICONS[icon] : ''}</div>
         <div class="n">${n}</div></div>`;
     }).join('');
   }
@@ -243,7 +253,7 @@
     .wrap{position:fixed;inset:0;background:#0F1522;overflow:hidden;
       --sunken:#0F1522;--default:#111827;--raised:#18213A;--overlay:#1F2A4D;--strong:#2B3961;
       --text:#F1F5FB;--subtle:#A2AABA;--subtlest:#8693A9;--brand:#6CD4F0;--brand-c:#233E4F;--on-brand:#111827;
-      --success:#7EE2B8;--warning:#F5C96B;--danger:#F58A80;
+      --success:#7EE2B8;--warning:#F5C96B;--danger:#F58A80;--orange:#F5A06B;
       --shadow:0 1px 2px rgba(0,0,0,.28),0 8px 24px -10px rgba(0,0,0,.5);
       --f:"Poppins",system-ui,"Segoe UI",Arial,sans-serif;
       font-family:var(--f);font-variant-numeric:tabular-nums;color:var(--text)}
@@ -275,7 +285,8 @@
     .nm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .n{font:600 40px var(--f)}
     .row.lead .av{background:var(--warning);color:var(--on-brand)}
-    .crown{width:32px;height:32px;flex:none;fill:var(--warning);filter:drop-shadow(0 0 6px rgba(245,201,107,.6))}
+    .badge{width:32px;height:32px;flex:none;fill:var(--warning);filter:drop-shadow(0 0 6px rgba(245,201,107,.6))}
+    .badge.flame{fill:var(--orange);filter:drop-shadow(0 0 8px rgba(245,160,107,.8))}
     .empty{color:var(--subtlest);font:500 16px var(--f);padding:12px}
     .flex{display:flex;align-items:center;gap:24px;flex:1;min-height:0}
     .donut{width:var(--s);height:var(--s);border-radius:50%;display:grid;place-items:center;flex:none;position:relative}
@@ -399,7 +410,7 @@
     ui.dClosed.textContent = (state.kpi.opened && state.kpi.closed != null) ? `${Math.round(state.kpi.closed / state.kpi.opened * 100)}% of opened` : '';
     ui.dAction.textContent = (state.kpi.open && act != null) ? `${(act / state.kpi.open * 100).toFixed(1)}% of open` : '';
 
-    setHTML(ui.listClosed, rowsHTML(state.closed, { crownAt: CONFIG.crownAt }));
+    setHTML(ui.listClosed, rowsHTML(state.closed, { badges: true }));
     setHTML(ui.listAction, rowsHTML(state.actionable));
     setHTML(ui.priority, pieCard('Tickets by priority', topN(state.priority, 5), priorityColor, 'open', 150, 'No tickets', 'tight'));
     setHTML(ui.feedback, pieCard('Customer feedback', state.feedback, feedbackColor, 'surveys', 150, 'No feedback'));
