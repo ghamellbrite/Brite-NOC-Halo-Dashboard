@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Brite NOC Dashboard (Hali)
 // @namespace    brite-noc
-// @version      2.1.0
+// @version      2.1.1
 // @description  Full-screen NOC wallboard overlay for HaloPSA dashboard 1013, styled with the Hali design language.
 // @match        https://brite.halopsa.com/dashboard*
 // @run-at       document-start
@@ -44,7 +44,8 @@
     // Report 662 is the best guess from the request order - press D on the dashboard to confirm.
     slaReport: 662,
     slaArea: /reactive/i,          // which row of the table to show
-    slaTargetPct: 95,              // ring turns amber within 5 pts of this, red below that
+    slaGreenAt: 90,                // at or above: green
+    slaRedBelow: 80,               // below: red; in between: yellow
 
     scroll: { pxPerSecond: 12, topPauseMs: 1200, bottomPauseMs: 1800, resetStepPx: 10 },
   };
@@ -222,15 +223,14 @@
   const fmt = v => v == null ? '—' : String(Math.round(v * 100) / 100);
 
   function slaRing(label, pct) {
-    const t = CONFIG.slaTargetPct;
     if (pct == null) return `<div class="slaItem"><div class="donut" style="--s:150px;background:conic-gradient(${C.strong} 0 360deg)"><div class="c"><b>—</b></div></div><span class="slaLabel">${label}</span></div>`;
-    const col = pct >= t ? C.success : pct >= t - 5 ? C.warning : C.danger;
+    const col = pct >= CONFIG.slaGreenAt ? C.success : pct >= CONFIG.slaRedBelow ? C.warning : C.danger;
     const deg = Math.max(0, Math.min(100, pct)) * 3.6;
     return `<div class="slaItem"><div class="donut" style="--s:150px;background:conic-gradient(${col} 0 ${deg.toFixed(1)}deg,${C.strong} ${deg.toFixed(1)}deg 360deg)">
       <div class="c"><b style="font-size:30px;color:${col}">${pct.toFixed(1)}<small>%</small></b></div></div><span class="slaLabel">${label}</span></div>`;
   }
   function slaHTML() {
-    return `<div class="eyebrow">Reactive ticket SLA · target ${CONFIG.slaTargetPct}%</div>
+    return `<div class="eyebrow">Reactive ticket SLA · target ${CONFIG.slaGreenAt}%</div>
       <div class="flex" style="justify-content:space-around">${slaRing('Response', state.sla.response)}${slaRing('Fix', state.sla.fix)}</div>`;
   }
 
